@@ -15,8 +15,48 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from api_tcc.api import viewsets
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title='API de Telemetria - TCC',
+        default_version='v1',
+        description='Sistema para cadastro e controle por telemetria de frota de veículos agrícolas',
+        terms_of_service='https://www.google.com/policies/terms/',
+        contact=openapi.Contact(email='contato@telemetria.com.br'),
+        license=openapi.License(name='OpenSource'),
+    ),
+    public=True,
+)
+
+router = routers.DefaultRouter()
+router.register(r'Unidadedemedida', viewsets.UnidadedeMedidaViewSet, basename='unidadedemedida')
+router.register(r'Marca', viewsets.MarcaViewSet, basename='marca')
+router.register(r'Modelo', viewsets.ModeloViewSet, basename='modelo')
+router.register(r'Combustivel', viewsets.CombustivelViewSet, basename='combustivel')
+router.register(r'Operario', viewsets.OperarioViewSet, basename='operario')
+router.register(r'Pressaopneus', viewsets.PressaoPneusViewSet, basename='pressaopneus')
+router.register(r'Alturadocorte', viewsets.AlturadoCorteViewSet, basename='alturadocorte')
+router.register(r'Pressaodocorte', viewsets.PressaodoCorteViewSet, basename='pressaodocorte')
+router.register(r'Tempumi_ambiente', viewsets.TempUmi_AmbienteViewSet, basename='tempumi_ambiente')
+router.register(r'Temperaturamaquina', viewsets.TemperaturaMaquinaViewSet, basename='temperaturamaquina')
+router.register(r'Statusdeoperacao', viewsets.StatusdeOperacaoViewSet, basename='statusdeoperacao')
+router.register(r'Estadodemovimento', viewsets.EstadodeMovimentoViewSet, basename='estadodemovimento')
+router.register(r'Transbordo', viewsets.TransbordoViewSet, basename='transbordo')
+router.register(r'Colheitadeira', viewsets.ColheitadeiraViewSet, basename='colheitadeira')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include(router.urls)),
+]
+
+urlpatterns += [
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('swaagger.json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

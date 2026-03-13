@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'setup.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'telemetria',
+        'NAME': 'projetotcc',
         'USER': 'root',
         'PASSWORD': 'Senai901',
         'HOST': 'localhost',

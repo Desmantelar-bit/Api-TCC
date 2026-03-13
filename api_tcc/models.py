@@ -31,11 +31,11 @@ class Combustivel(models.Model):
 
 class Operario(models.Model):
     Nome = models.CharField(max_length=100)
-    Idade = models.IntegerField()
+    TempodeServico = models.IntegerField(max_length=2)
     Nobanco = models.BooleanField(default=True)
     
     def __str__(self):
-        return f'{self.Nome} - {self.Idade} anos - {"No banco" if self.Nobanco else "Fora do banco"}'
+        return f'{self.Nome} - {self.TempodeServico} anos - {"No banco" if self.Nobanco else "Fora do banco"}'
 
 class PressaoPneus(models.Model):
 
@@ -65,14 +65,7 @@ class TempUmi_Ambiente (models.Model):
     
     def __str__(self):
         return f'Temperatura: {self.Temperatura} - Umidade: {self.Umidade}'
-
-class TemperaturaMaquina(models.Model):
-    Temperatura = models.FloatField()
-    Maquina = models.ForeignKey(Modelo, on_delete=models.DO_NOTHING)
     
-    def __str__(self):
-        return f'Temperatura: {self.Temperatura}'
-
 class Transbordo(models.Model):
     Modelo = models.ForeignKey(Modelo, on_delete=models.CASCADE)
     Capacidade = models.FloatField()
@@ -87,6 +80,20 @@ class StatusdeOperacao(models.Model):
     def __str__(self):
         return f'Em Operação: {"Sim" if self.Em_Operacao else "Não"} - Tempo de Operação: {self.Tempo_de_Operacao} horas'
         
+class EstadodeMovimento(models.Model):
+    Em_Movimento = models.BooleanField(default=False)
+    Velocidade = models.FloatField()
+
+    def __str__(self):
+        return f'Em Movimento: {"Sim" if self.Em_Movimento else "Não"} - Velocidade: {self.Velocidade} km/h'
+
+class TemperaturaMaquina(models.Model):
+    Temperatura = models.FloatField()
+    Maquina = models.ForeignKey(Modelo, on_delete=models.DO_NOTHING)
+    
+    def __str__(self):
+        return f'Temperatura: {self.Temperatura}'
+    
 class Colheitadeira(models.Model):
     
     Modelo = models.ForeignKey(Modelo, on_delete=models.CASCADE)
@@ -98,12 +105,7 @@ class Colheitadeira(models.Model):
     TemperaturaMaquina = models.ForeignKey(TemperaturaMaquina, on_delete=models.CASCADE)
     Operario = models.ForeignKey(Operario, on_delete=models.CASCADE)
     StatusdeOperacao = models.ForeignKey(StatusdeOperacao, on_delete=models.CASCADE)
+    EstadodeMovimento = models.ForeignKey(EstadodeMovimento, on_delete=models.CASCADE)
     def __str__(self):
-        return f'Máquina: {self.Modelo.Nome} - Operário: {self.Operario.Nome}'
+        return f'Máquina: {self.Modelo.Nome} - Operário: {self.Operario.Nome} - Em Operação: {"Sim" if self.StatusdeOperacao.Em_Operacao else "Não"} - Em Movimento: {"Sim" if self.EstadodeMovimento.Em_Movimento else "Não"}'
 
-class EstadodeMovimento(models.Model):
-    Em_Movimento = models.BooleanField(default=False)
-    Velocidade = models.FloatField()
-
-    def __str__(self):
-        return self.Estado
