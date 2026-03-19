@@ -1,6 +1,9 @@
 # Ignorar arquivos e diretórios do Python
 *.pyc
+*.pyo
+*.pyd
 __pycache__/
+**/__pycache__/
 *.pyo
 *.pyd
 .Python
