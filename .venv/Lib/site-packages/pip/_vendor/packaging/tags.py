@@ -13,7 +13,6 @@ import sys
 import sysconfig
 from importlib.machinery import EXTENSION_SUFFIXES
 from typing import (
-    Any,
     Iterable,
     Iterator,
     Sequence,
@@ -92,13 +91,6 @@ class Tag:
 
     def __repr__(self) -> str:
         return f"<{self} @ {id(self)}>"
-
-    def __setstate__(self, state: tuple[None, dict[str, Any]]) -> None:
-        # The cached _hash is wrong when unpickling.
-        _, slots = state
-        for k, v in slots.items():
-            setattr(self, k, v)
-        self._hash = hash((self._interpreter, self._abi, self._platform))
 
 
 def parse_tag(tag: str) -> frozenset[Tag]:
@@ -217,13 +209,16 @@ def cpython_tags(
     interpreter = f"cp{_version_nodot(python_version[:2])}"
 
     if abis is None:
-        abis = _cpython_abis(python_version, warn) if len(python_version) > 1 else []
+        if len(python_version) > 1:
+            abis = _cpython_abis(python_version, warn)
+        else:
+            abis = []
     abis = list(abis)
     # 'abi3' and 'none' are explicitly handled later.
     for explicit_abi in ("abi3", "none"):
         try:
             abis.remove(explicit_abi)
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             pass
 
     platforms = list(platforms or platform_tags())
@@ -304,8 +299,11 @@ def generic_tags(
     if not interpreter:
         interp_name = interpreter_name()
         interp_version = interpreter_version(warn=warn)
-        interpreter = f"{interp_name}{interp_version}"
-    abis = _generic_abi() if abis is None else list(abis)
+        interpreter = "".join([interp_name, interp_version])
+    if abis is None:
+        abis = _generic_abi()
+    else:
+        abis = list(abis)
     platforms = list(platforms or platform_tags())
     if "none" not in abis:
         abis.append("none")
@@ -426,11 +424,14 @@ def mac_platforms(
                 text=True,
             ).stdout
             version = cast("AppleVersion", tuple(map(int, version_str.split(".")[:2])))
-
+    else:
+        version = version
     if arch is None:
         arch = _mac_arch(cpu_arch)
+    else:
+        arch = arch
 
-    if (10, 0) <= version < (11, 0):
+    if (10, 0) <= version and version < (11, 0):
         # Prior to Mac OS 11, each yearly release of Mac OS bumped the
         # "minor" version number.  The major version was always 10.
         major_version = 10
@@ -621,7 +622,11 @@ def interpreter_version(*, warn: bool = False) -> str:
     Returns the version of the running interpreter.
     """
     version = _get_config_var("py_version_nodot", warn=warn)
-    return str(version) if version else _version_nodot(sys.version_info[:2])
+    if version:
+        version = str(version)
+    else:
+        version = _version_nodot(sys.version_info[:2])
+    return version
 
 
 def _version_nodot(version: PythonVersion) -> str:

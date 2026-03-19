@@ -31,7 +31,7 @@ def get_view_name(view_func):
 
 def parse_docstring(docstring):
     """
-    Parse out the parts of a docstring.  Return (title, body, metadata).
+    Parse out the parts of a docstring. Return (title, body, metadata).
     """
     if not docstring:
         return "", "", {}
@@ -70,8 +70,8 @@ def parse_rst(text, default_reference_context, thing_being_parsed=None):
         "file_insertion_enabled": False,
     }
     thing_being_parsed = thing_being_parsed and "<%s>" % thing_being_parsed
-    # Wrap ``text`` in some reST that sets the default role to ``cmsreference``,
-    # then restores it.
+    # Wrap ``text`` in some reST that sets the default role to
+    # ``cmsreference``, then restores it.
     source = """
 .. default-role:: cmsreference
 
@@ -110,8 +110,8 @@ def split_explicit_title(text):
     """
     Split role content into title and target, if given.
 
-    From sphinx.util.nodes.split_explicit_title
-    See https://github.com/sphinx-doc/sphinx/blob/230ccf2/sphinx/util/nodes.py#L389
+    From sphinx.util.nodes.split_explicit_title. See:
+    https://github.com/sphinx-doc/sphinx/blob/230ccf2/sphinx/util/nodes.py#L389
     """
     match = explicit_title_re.match(text)
     if match:

@@ -1,6 +1,5 @@
 import functools
 import inspect
-import warnings
 from functools import partial
 
 from django import forms
@@ -14,7 +13,6 @@ from django.db.models.constants import LOOKUP_SEP
 from django.db.models.deletion import CASCADE, SET_DEFAULT, SET_NULL
 from django.db.models.query_utils import PathInfo
 from django.db.models.utils import make_model_tuple
-from django.utils.deprecation import RemovedInDjango60Warning
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
@@ -582,6 +580,7 @@ class ForeignObject(RelatedField):
             *self._check_to_fields_exist(),
             *self._check_to_fields_composite_pk(),
             *self._check_unique_target(),
+            *self._check_conflict_with_managers(),
         ]
 
     def _check_to_fields_exist(self):
@@ -665,8 +664,8 @@ class ForeignObject(RelatedField):
                     frozenset(uc.fields) <= foreign_fields
                     for uc in remote_opts.total_unique_constraints
                 )
-                # If the model defines a composite primary key and the foreign key
-                # refers to it, the target is unique.
+                # If the model defines a composite primary key and the foreign
+                # key refers to it, the target is unique.
                 or (
                     frozenset(field.name for field in remote_opts.pk_fields)
                     == foreign_fields
@@ -711,6 +710,27 @@ class ForeignObject(RelatedField):
                 ]
         return []
 
+    def _check_conflict_with_managers(self):
+        errors = []
+        manager_names = {manager.name for manager in self.opts.managers}
+        for rel_objs in self.model._meta.related_objects:
+            related_object_name = rel_objs.name
+            if related_object_name in manager_names:
+                field_name = f"{self.model._meta.object_name}.{self.name}"
+                errors.append(
+                    checks.Error(
+                        f"Related name '{related_object_name}' for '{field_name}' "
+                        "clashes with the name of a model manager.",
+                        hint=(
+                            "Rename the model manager or change the related_name "
+                            f"argument in the definition for field '{field_name}'."
+                        ),
+                        obj=self,
+                        id="fields.E348",
+                    )
+                )
+        return errors
+
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
         kwargs["on_delete"] = self.remote_field.on_delete
@@ -727,8 +747,8 @@ class ForeignObject(RelatedField):
                 kwargs["to"] = self.remote_field.model.lower()
         else:
             kwargs["to"] = self.remote_field.model._meta.label_lower
-        # If swappable is True, then see if we're actually pointing to the target
-        # of a swap.
+        # If swappable is True, then see if we're actually pointing to the
+        # target of a swap.
         swappable_setting = self.swappable_setting
         if swappable_setting is not None:
             # If it's already a settings reference, error
@@ -817,27 +837,6 @@ class ForeignObject(RelatedField):
     def get_attname_column(self):
         attname, column = super().get_attname_column()
         return attname, None
-
-    def get_joining_columns(self, reverse_join=False):
-        warnings.warn(
-            "ForeignObject.get_joining_columns() is deprecated. Use "
-            "get_joining_fields() instead.",
-            RemovedInDjango60Warning,
-            stacklevel=2,
-        )
-        source = self.reverse_related_fields if reverse_join else self.related_fields
-        return tuple(
-            (lhs_field.column, rhs_field.column) for lhs_field, rhs_field in source
-        )
-
-    def get_reverse_joining_columns(self):
-        warnings.warn(
-            "ForeignObject.get_reverse_joining_columns() is deprecated. Use "
-            "get_reverse_joining_fields() instead.",
-            RemovedInDjango60Warning,
-            stacklevel=2,
-        )
-        return self.get_joining_columns(reverse_join=True)
 
     def get_joining_fields(self, reverse_join=False):
         return tuple(
@@ -1735,13 +1734,18 @@ class ManyToManyField(RelatedField):
                             and getattr(field.remote_field, "model", None)
                             == related_model
                         ):
+                            related_object_name = (
+                                related_model
+                                if isinstance(related_model, str)
+                                else related_model._meta.object_name
+                            )
                             errors.append(
                                 checks.Error(
                                     "'%s.%s' is not a foreign key to '%s'."
                                     % (
                                         through._meta.object_name,
                                         field_name,
-                                        related_model._meta.object_name,
+                                        related_object_name,
                                     ),
                                     hint=hint,
                                     obj=self,
@@ -1826,8 +1830,8 @@ class ManyToManyField(RelatedField):
                 kwargs["through"] = self.remote_field.through._meta.label
         if through_fields := getattr(self.remote_field, "through_fields", None):
             kwargs["through_fields"] = through_fields
-        # If swappable is True, then see if we're actually pointing to the target
-        # of a swap.
+        # If swappable is True, then see if we're actually pointing to the
+        # target of a swap.
         swappable_setting = self.swappable_setting
         if swappable_setting is not None:
             # If it's already a settings reference, error.
@@ -1844,6 +1848,10 @@ class ManyToManyField(RelatedField):
                 swappable_setting,
             )
         return name, path, args, kwargs
+
+    def get_attname_column(self):
+        attname, _ = super().get_attname_column()
+        return attname, None
 
     def _get_path_info(self, direct=False, filtered_relation=None):
         """Called by both direct and indirect m2m traversal."""

@@ -1,4 +1,5 @@
 import operator
+import sqlite3
 
 from django.db import transaction
 from django.db.backends.base.features import BaseDatabaseFeatures
@@ -13,7 +14,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     test_db_allows_multiple_connections = False
     supports_unspecified_pk = True
     supports_timezones = False
-    max_query_params = 999
     supports_transactions = True
     atomic_transactions = False
     can_rollback_ddl = True
@@ -34,6 +34,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_frame_range_fixed_distance = True
     supports_frame_exclusion = True
     supports_aggregate_filter_clause = True
+    supports_aggregate_order_by_clause = Database.sqlite_version_info >= (3, 44, 0)
+    supports_aggregate_distinct_multiple_argument = False
+    supports_any_value = True
     order_by_nulls_first = True
     supports_json_field_contains = False
     supports_update_conflicts = True
@@ -54,7 +57,6 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     insert_test_table_with_defaults = 'INSERT INTO {} ("null") VALUES (1)'
     supports_default_keyword_in_insert = False
     supports_unlimited_charfield = True
-    supports_tuple_lookups = False
 
     @cached_property
     def django_test_skips(self):
@@ -139,6 +141,17 @@ class DatabaseFeatures(BaseDatabaseFeatures):
             "SmallAutoField": "AutoField",
         }
 
+    @property
+    def max_query_params(self):
+        """
+        SQLite has a variable limit per query. The limit can be changed using
+        the SQLITE_MAX_VARIABLE_NUMBER compile-time option (which defaults to
+        999 in versions < 3.32.0 or 32766 in newer versions) or lowered per
+        connection at run-time with setlimit(SQLITE_LIMIT_VARIABLE_NUMBER, N).
+        """
+        self.connection.ensure_connection()
+        return self.connection.connection.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+
     @cached_property
     def supports_json_field(self):
         with self.connection.cursor() as cursor:
@@ -157,5 +170,9 @@ class DatabaseFeatures(BaseDatabaseFeatures):
         return Database.sqlite_version_info >= (3, 35)
 
     can_return_rows_from_bulk_insert = property(
+        operator.attrgetter("can_return_columns_from_insert")
+    )
+
+    can_return_rows_from_update = property(
         operator.attrgetter("can_return_columns_from_insert")
     )

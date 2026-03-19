@@ -289,7 +289,8 @@ class BaseExpression:
            in this query
          * reuse: a set of reusable joins for multijoins
          * summarize: a terminal aggregate clause
-         * for_save: whether this expression about to be used in a save or update
+         * for_save: whether this expression about to be used in a save or
+           update
 
         Return: an Expression to be added to the query.
         """
@@ -349,9 +350,9 @@ class BaseExpression:
         As a guess, if the output fields of all source fields match then simply
         infer the same type here.
 
-        If a source's output field resolves to None, exclude it from this check.
-        If all sources are None, then an error is raised higher up the stack in
-        the output_field property.
+        If a source's output field resolves to None, exclude it from this
+        check. If all sources are None, then an error is raised higher up the
+        stack in the output_field property.
         """
         # This guess is mostly a bad idea, but there is quite a lot of code
         # (especially 3rd party Func subclasses) that depend on it, we'd need a
@@ -500,7 +501,8 @@ class BaseExpression:
         return sql, params
 
     def get_expression_for_validation(self):
-        # Ignore expressions that cannot be used during a constraint validation.
+        # Ignore expressions that cannot be used during a constraint
+        # validation.
         if not getattr(self, "constraint_validation_compatible", True):
             try:
                 (expression,) = self.get_source_expressions()
@@ -1125,7 +1127,7 @@ class Func(SQLiteNumericMixin, Expression):
         template = template or data.get("template", self.template)
         arg_joiner = arg_joiner or data.get("arg_joiner", self.arg_joiner)
         data["expressions"] = data["field"] = arg_joiner.join(sql_parts)
-        return template % data, params
+        return template % data, tuple(params)
 
     def copy(self):
         copy = super().copy()
@@ -1264,7 +1266,8 @@ class Star(Expression):
 
 class DatabaseDefault(Expression):
     """
-    Expression to use DEFAULT keyword during insert otherwise the underlying expression.
+    Expression to use DEFAULT keyword during insert otherwise the underlying
+    expression.
     """
 
     def __init__(self, expression, output_field=None):
@@ -1320,7 +1323,7 @@ class Col(Expression):
         alias, column = self.alias, self.target.column
         identifiers = (alias, column) if alias else (column,)
         sql = ".".join(map(compiler.quote_name_unless_alias, identifiers))
-        return sql, []
+        return sql, ()
 
     def relabeled_clone(self, relabels):
         if self.alias is None:
@@ -1481,6 +1484,21 @@ class OrderByList(ExpressionList):
         )
         super().__init__(*expressions, **extra)
 
+    @classmethod
+    def from_param(cls, context, param):
+        if param is None:
+            return None
+        if isinstance(param, (list, tuple)):
+            if not param:
+                return None
+            return cls(*param)
+        elif isinstance(param, str) or hasattr(param, "resolve_expression"):
+            return cls(param)
+        raise ValueError(
+            f"{context} must be either a string reference to a "
+            f"field, an expression, or a list or tuple of them not {param!r}."
+        )
+
 
 @deconstructible(path="django.db.models.ExpressionWrapper")
 class ExpressionWrapper(SQLiteNumericMixin, Expression):
@@ -1610,7 +1628,8 @@ class When(Expression):
     ):
         c = super().resolve_expression(query, allow_joins, reuse, summarize, for_save)
         if for_save and c.condition is not None:
-            # Resolve condition with for_save=False, since it's used as a filter.
+            # Resolve condition with for_save=False, since it's used as a
+            # filter.
             c.condition = self.condition.resolve_expression(
                 query, allow_joins, reuse, summarize, for_save=False
             )
@@ -1682,7 +1701,7 @@ class Case(SQLiteNumericMixin, Expression):
         return "<%s: %s>" % (self.__class__.__name__, self)
 
     def get_source_expressions(self):
-        return self.cases + [self.default]
+        return [*self.cases, self.default]
 
     def set_source_expressions(self, exprs):
         *self.cases, self.default = exprs
@@ -1707,14 +1726,24 @@ class Case(SQLiteNumericMixin, Expression):
             except EmptyResultSet:
                 continue
             except FullResultSet:
-                default_sql, default_params = compiler.compile(case.result)
+                default = case.result
                 break
             case_parts.append(case_sql)
             sql_params.extend(case_params)
         else:
-            default_sql, default_params = compiler.compile(self.default)
-        if not case_parts:
-            return default_sql, default_params
+            default = self.default
+        if case_parts:
+            default_sql, default_params = compiler.compile(default)
+        else:
+            if (
+                isinstance(default, Value)
+                and (output_field := default._output_field_or_none) is not None
+            ):
+                from django.db.models.functions import Cast
+
+                default = Cast(default, output_field)
+            return compiler.compile(default)
+
         case_joiner = case_joiner or self.case_joiner
         template_params["cases"] = case_joiner.join(case_parts)
         template_params["default"] = default_sql
@@ -1752,6 +1781,7 @@ class Subquery(BaseExpression, Combinable):
         # Allow the usage of both QuerySet and sql.Query objects.
         self.query = getattr(queryset, "query", queryset).clone()
         self.query.subquery = True
+        self.template = extra.pop("template", self.template)
         self.extra = extra
         super().__init__(output_field)
 
@@ -1763,6 +1793,23 @@ class Subquery(BaseExpression, Combinable):
 
     def _resolve_output_field(self):
         return self.query.output_field
+
+    def resolve_expression(self, *args, **kwargs):
+        resolved = super().resolve_expression(*args, **kwargs)
+        if type(self) is Subquery and self.template == Subquery.template:
+            resolved.query.contains_subquery = True
+            # Subquery is an unnecessary shim for a resolved query as it
+            # complexifies the lookup's right-hand-side introspection.
+            try:
+                self.output_field
+            except AttributeError:
+                return resolved.query
+            if self.output_field and type(self.output_field) is not type(
+                resolved.query.output_field
+            ):
+                return ExpressionWrapper(resolved.query, output_field=self.output_field)
+            return resolved.query
+        return resolved
 
     def copy(self):
         clone = super().copy()
@@ -1954,16 +2001,7 @@ class Window(SQLiteNumericMixin, Expression):
                 self.partition_by = (self.partition_by,)
             self.partition_by = ExpressionList(*self.partition_by)
 
-        if self.order_by is not None:
-            if isinstance(self.order_by, (list, tuple)):
-                self.order_by = OrderByList(*self.order_by)
-            elif isinstance(self.order_by, (BaseExpression, str)):
-                self.order_by = OrderByList(self.order_by)
-            else:
-                raise ValueError(
-                    "Window.order_by must be either a string reference to a "
-                    "field, an expression, or a list or tuple of them."
-                )
+        self.order_by = OrderByList.from_param("Window.order_by", self.order_by)
         super().__init__(output_field=output_field)
         self.source_expression = self._parse_expressions(expression)[0]
 

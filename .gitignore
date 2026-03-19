@@ -35,6 +35,7 @@ media/
 
 # Ignorar configurações locais
 local_settings.py
+.env
 
 # Ignorar arquivos do staticfiles quando coletados
 staticfiles/

@@ -11,6 +11,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     allows_group_by_selected_pks = True
     can_return_columns_from_insert = True
     can_return_rows_from_bulk_insert = True
+    can_return_rows_from_update = True
     has_real_datatype = True
     has_native_uuid_field = True
     has_native_duration_field = True
@@ -57,6 +58,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_frame_exclusion = True
     only_supports_unbounded_with_preceding_and_following = True
     supports_aggregate_filter_clause = True
+    supports_aggregate_order_by_clause = True
     supported_explain_formats = {"JSON", "TEXT", "XML", "YAML"}
     supports_deferrable_unique_constraints = True
     has_json_operators = True
@@ -122,6 +124,15 @@ class DatabaseFeatures(BaseDatabaseFeatures):
                     "test_group_by_nested_expression_with_params",
                 }
             )
+        if not is_psycopg3:
+            expected_failures.update(
+                {
+                    # operator does not exist: bigint[] = integer[]
+                    "postgres_tests.test_array.TestQuerying.test_gt",
+                    "postgres_tests.test_array.TestQuerying.test_in",
+                    "postgres_tests.test_array.TestQuerying.test_lt",
+                }
+            )
         return expected_failures
 
     @cached_property
@@ -161,3 +172,5 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_nulls_distinct_unique_constraints = property(
         operator.attrgetter("is_postgresql_15")
     )
+
+    supports_any_value = property(operator.attrgetter("is_postgresql_16"))

@@ -1,6 +1,7 @@
 import logging
 import operator
 from datetime import datetime
+from itertools import chain
 
 from django.conf import settings
 from django.core.exceptions import FieldError
@@ -95,7 +96,7 @@ class BaseDatabaseSchemaEditor:
     sql_alter_column_default = "ALTER COLUMN %(column)s SET DEFAULT %(default)s"
     sql_alter_column_no_default = "ALTER COLUMN %(column)s DROP DEFAULT"
     sql_alter_column_no_default_null = sql_alter_column_no_default
-    sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s CASCADE"
+    sql_delete_column = "ALTER TABLE %(table)s DROP COLUMN %(column)s"
     sql_rename_column = (
         "ALTER TABLE %(table)s RENAME COLUMN %(old_column)s TO %(new_column)s"
     )
@@ -313,8 +314,6 @@ class BaseDatabaseSchemaEditor:
         yield column_db_type
         if collation := field_db_params.get("collation"):
             yield self._collate_sql(collation)
-        if self.connection.features.supports_comments_inline and field.db_comment:
-            yield self._comment_sql(field.db_comment)
         # Work out nullability.
         null = field.null
         # Add database default.
@@ -373,6 +372,8 @@ class BaseDatabaseSchemaEditor:
             and field.unique
         ):
             yield self.connection.ops.tablespace_sql(tablespace, inline=True)
+        if self.connection.features.supports_comments_inline and field.db_comment:
+            yield self._comment_sql(field.db_comment)
 
     def column_sql(self, model, field, include_default=False):
         """
@@ -494,8 +495,8 @@ class BaseDatabaseSchemaEditor:
         Return a quoted version of the value so it's safe to use in an SQL
         string. This is not safe against injection from user code; it is
         intended only for use in making SQL scripts or preparing default values
-        for particularly tricky backends (defaults are not user-defined, though,
-        so this is safe).
+        for particularly tricky backends (defaults are not user-defined,
+        though, so this is safe).
         """
         raise NotImplementedError()
 
@@ -1022,11 +1023,12 @@ class BaseDatabaseSchemaEditor:
         # will now be used in lieu of an index. The following lines from the
         # truth table show all True cases; the rest are False:
         #
-        # old_field.db_index | old_field.unique | new_field.db_index | new_field.unique
-        # ------------------------------------------------------------------------------
-        # True               | False            | False              | False
-        # True               | False            | False              | True
-        # True               | False            | True               | True
+        #      old_field    |     new_field
+        # db_index | unique | db_index | unique
+        # -------------------------------------
+        # True     | False  | False    | False
+        # True     | False  | False    | True
+        # True     | False  | True     | True
         if (
             old_field.db_index
             and not old_field.unique
@@ -1159,7 +1161,7 @@ class BaseDatabaseSchemaEditor:
             # Combine actions together if we can (e.g. postgres)
             if self.connection.features.supports_combined_alters and actions:
                 sql, params = tuple(zip(*actions))
-                actions = [(", ".join(sql), sum(params, []))]
+                actions = [(", ".join(sql), tuple(chain(*params)))]
             # Apply those actions
             for sql, params in actions:
                 self.execute(
@@ -1210,11 +1212,12 @@ class BaseDatabaseSchemaEditor:
         # constraint will no longer be used in lieu of an index. The following
         # lines from the truth table show all True cases; the rest are False:
         #
-        # old_field.db_index | old_field.unique | new_field.db_index | new_field.unique
-        # ------------------------------------------------------------------------------
-        # False              | False            | True               | False
-        # False              | True             | True               | False
-        # True               | True             | True               | False
+        #      old_field    |     new_field
+        # db_index | unique | db_index | unique
+        # -------------------------------------
+        # False    | False  | True     | False
+        # False    | True   | True     | False
+        # True     | True   | True     | False
         if (
             (not old_field.db_index or old_field.unique)
             and new_field.db_index
@@ -1232,7 +1235,8 @@ class BaseDatabaseSchemaEditor:
             self.execute(self._create_primary_key_sql(model, new_field))
             # Update all referencing columns
             rels_to_update.extend(_related_non_m2m_objects(old_field, new_field))
-        # Handle our type alters on the other end of rels from the PK stuff above
+        # Handle our type alters on the other end of rels from the PK stuff
+        # above
         for old_rel, new_rel in rels_to_update:
             rel_db_params = new_rel.field.db_parameters(connection=self.connection)
             rel_type = rel_db_params["type"]
@@ -1481,7 +1485,8 @@ class BaseDatabaseSchemaEditor:
         )
         self.alter_field(
             new_field.remote_field.through,
-            # for self-referential models we need to alter field from the other end too
+            # for self-referential models we need to alter field from the other
+            # end too
             old_field.remote_field.through._meta.get_field(old_field.m2m_field_name()),
             new_field.remote_field.through._meta.get_field(new_field.m2m_field_name()),
         )
@@ -1655,13 +1660,15 @@ class BaseDatabaseSchemaEditor:
         return output
 
     def _field_should_be_altered(self, old_field, new_field, ignore=None):
-        if not old_field.concrete and not new_field.concrete:
+        if (not (old_field.concrete or old_field.many_to_many)) and (
+            not (new_field.concrete or new_field.many_to_many)
+        ):
             return False
         ignore = ignore or set()
         _, old_path, old_args, old_kwargs = old_field.deconstruct()
         _, new_path, new_args, new_kwargs = new_field.deconstruct()
         # Don't alter when:
-        # - changing only a field name
+        # - changing only a field name (unless it's a many-to-many)
         # - changing an attribute that doesn't affect the schema
         # - changing an attribute in the provided set of ignored attributes
         # - adding only a db_column and the column name is not changed
@@ -1679,7 +1686,7 @@ class BaseDatabaseSchemaEditor:
         ):
             old_kwargs.pop("to", None)
             new_kwargs.pop("to", None)
-        # db_default can take many form but result in the same SQL.
+        # db_default can take many forms but result in the same SQL.
         if (
             old_kwargs.get("db_default")
             and new_kwargs.get("db_default")
@@ -1687,9 +1694,19 @@ class BaseDatabaseSchemaEditor:
         ):
             old_kwargs.pop("db_default")
             new_kwargs.pop("db_default")
-        return self.quote_name(old_field.column) != self.quote_name(
-            new_field.column
-        ) or (old_path, old_args, old_kwargs) != (new_path, new_args, new_kwargs)
+        if (
+            old_field.concrete
+            and new_field.concrete
+            and (self.quote_name(old_field.column) != self.quote_name(new_field.column))
+        ):
+            return True
+        if (
+            old_field.many_to_many
+            and new_field.many_to_many
+            and old_field.name != new_field.name
+        ):
+            return True
+        return (old_path, old_args, old_kwargs) != (new_path, new_args, new_kwargs)
 
     def _field_should_be_indexed(self, model, field):
         return field.db_index and not field.unique

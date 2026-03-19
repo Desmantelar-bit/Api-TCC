@@ -263,9 +263,10 @@ class DeferredAttribute:
             # might be able to reuse the already loaded value. Refs #18343.
             val = self._check_parent_chain(instance)
             if val is None:
-                if not instance._is_pk_set() and self.field.generated:
+                if not instance._is_pk_set():
                     raise AttributeError(
-                        "Cannot read a generated field from an unsaved model."
+                        f"Cannot retrieve deferred field {field_name!r} "
+                        "from an unsaved model."
                     )
                 instance.refresh_from_db(fields=[field_name])
             else:
@@ -344,8 +345,9 @@ class RegisterLookupMixin:
     @staticmethod
     def merge_dicts(dicts):
         """
-        Merge dicts in reverse to preference the order of the original list. e.g.,
-        merge_dicts([a, b]) will preference the keys in 'a' over those in 'b'.
+        Merge dicts in reverse to preference the order of the original list.
+        e.g., merge_dicts([a, b]) will preference the keys in 'a' over those in
+        'b'.
         """
         merged = {}
         for d in reversed(dicts):
@@ -477,8 +479,8 @@ def check_rel_lookup_compatibility(model, target_opts, field):
     # Restaurant.objects.filter(pk__in=Restaurant.objects.all()).
     # If we didn't have the primary key check, then pk__in (== place__in) would
     # give Place's opts as the target opts, but Restaurant isn't compatible
-    # with that. This logic applies only to primary keys, as when doing __in=qs,
-    # we are going to turn this into __in=qs.values('pk') later on.
+    # with that. This logic applies only to primary keys, as when doing
+    # __in=qs, we are going to turn this into __in=qs.values('pk') later on.
     return check(target_opts) or (
         getattr(field, "primary_key", False) and check(field.model._meta)
     )

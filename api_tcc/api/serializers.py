@@ -158,3 +158,15 @@ class ColheitadeiraSerializer(serializers.ModelSerializer):
             'EstadodeMovimento': {'label': 'Estado de Movimento', 'required': True}
         }
 
+
+from api_tcc.models import LeituraTelemetria
+
+class LeituraTelemetriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeituraTelemetria
+        fields = '__all__'
+        extra_kwargs = {
+            'id':          {'read_only': True},
+            'recebido_em': {'read_only': True},
+        }
+

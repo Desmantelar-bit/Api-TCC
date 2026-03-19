@@ -73,7 +73,8 @@ class Library:
                 # @register.filter
                 return self.filter_function(name, **flags)
             else:
-                # @register.filter('somename') or @register.filter(name='somename')
+                # @register.filter('somename') or
+                # @register.filter(name='somename')
                 def dec(func):
                     return self.filter(name, func, **flags)
 
@@ -307,7 +308,7 @@ class TagHelperNode(Node):
     def get_resolved_arguments(self, context):
         resolved_args = [var.resolve(context) for var in self.args]
         if self.takes_context:
-            resolved_args = [context] + resolved_args
+            resolved_args = [context, *resolved_args]
         resolved_kwargs = {k: v.resolve(context) for k, v in self.kwargs.items()}
         return resolved_args, resolved_kwargs
 
@@ -487,5 +488,5 @@ def import_library(name):
         return module.register
     except AttributeError:
         raise InvalidTemplateLibrary(
-            "Module  %s does not have a variable named 'register'" % name,
+            "Module %s does not have a variable named 'register'" % name,
         )

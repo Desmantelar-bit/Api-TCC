@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from api_tcc.api import viewsets
+from api_tcc.api.views_ingestao import IngestaoTelemetriaView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -53,6 +54,7 @@ router.register(r'Colheitadeira', viewsets.ColheitadeiraViewSet, basename='colhe
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+    path('api/telemetria/', IngestaoTelemetriaView.as_view(), name='ingestao-telemetria'),
 ]
 
 urlpatterns += [

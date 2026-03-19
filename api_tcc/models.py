@@ -109,3 +109,21 @@ class Colheitadeira(models.Model):
     def __str__(self):
         return f'Máquina: {self.Modelo.Nome} - Operário: {self.Operario.Nome} - Em Operação: {"Sim" if self.StatusdeOperacao.Em_Operacao else "Não"} - Em Movimento: {"Sim" if self.EstadodeMovimento.Em_Movimento else "Não"}'
 
+
+import uuid as uuid_lib
+
+class LeituraTelemetria(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid_lib.uuid4, editable=False)
+    maquina_id = models.CharField(max_length=50)
+    temperatura = models.FloatField()
+    vibracao = models.FloatField()
+    rpm = models.IntegerField()
+    timestamp = models.DateTimeField()
+    recebido_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f'{self.maquina_id} — {self.temperatura}°C — {self.timestamp}'
+
