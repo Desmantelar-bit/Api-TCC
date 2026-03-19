@@ -13,7 +13,7 @@ class IngestaoTelemetriaView(APIView):
             if LeituraTelemetria.objects.filter(id=uuid_recebido).exists():
                 return Response(
                     {'status': 'duplicata ignorada', 'id': uuid_recebido},
-                    status=status.HTTP_409_CONFLICT
+                    status=status.HTTP_200_OK
                 )
 
         serializer = LeituraTelemetriaSerializer(data=request.data)
