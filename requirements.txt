@@ -1,0 +1,7 @@
+pip install mysqlclient 
+
+pip install django==5.2 djangorestframework 
+
+pip install drf-yasg
+
+pip install django-cors-headers
