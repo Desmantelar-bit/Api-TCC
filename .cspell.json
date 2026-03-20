@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "language": "pt,pt-BR,en",
+  "ignorePaths": [
+    ".venv/**",
+    "node_modules/**",
+    "*.min.css",
+    "*.min.js"
+  ],
+  "words": [
+    "fieldnode", "telemetria", "colheitadeira", "colheitadeiras",
+    "operario", "operarios", "ingestao", "ingestão", "deduplicação",
+    "mysqlclient", "drf", "yasg", "viewsets", "runserver", "venv",
+    "virtualenv", "serialização", "Temperaturamaquina", "maquina",
+    "fieldnode", "mysqlclient", "decouple", "corsheaders"
+  ]
+}
