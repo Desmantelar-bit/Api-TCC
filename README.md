@@ -174,10 +174,10 @@ Desenvolvido por estudantes do curso técnico de Informática do **SENAI** como 
 
 | Nome | GitHub | LinkedIn | E-mail |
 |------|--------|----------|--------|
-| Vinícius Morales | [@ViniciusMorales](https://github.com/ViniciusMorales) | [LinkedIn](https://www.linkedin.com/in/vin%C3%ADcius-morales-609744368/) | viniciusmorales09@gmail.com |
-| Paola | [@Paola5858](https://github.com/Paola5858) | [LinkedIn](https://www.linkedin.com/in/paolasoaresmachado/) | paolasesi351@gmail.com |
-| Ana Caroline Furlaneto | [@acfurlaneto](https://github.com/acfurlaneto) | [LinkedIn](https://www.linkedin.com/in/ana-furlaneto-a47746368/) | ana.furlaneto19@icloud.com |
-| Giovana Machado D'Angelo | — | [LinkedIn](https://www.linkedin.com/in/giovanamdangelo/) | giovanamachadodangelo@gmail.com |
+| Vinícius Morales | [![GitHub](https://img.shields.io/badge/GitHub-ViniciusMorales-181717?logo=github)](https://github.com/ViniciusMorales) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Vinícius-0A66C2?logo=linkedin)](https://www.linkedin.com/in/vin%C3%ADcius-morales-609744368/) | viniciusmorales09@gmail.com |
+| Paola | [![GitHub](https://img.shields.io/badge/GitHub-Paola5858-181717?logo=github)](https://github.com/Paola5858) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Paola-0A66C2?logo=linkedin)](https://www.linkedin.com/in/paolasoaresmachado/) | paolasesi351@gmail.com |
+| Ana Caroline Furlaneto | [![GitHub](https://img.shields.io/badge/GitHub-acfurlaneto-181717?logo=github)](https://github.com/acfurlaneto) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ana%20Caroline-0A66C2?logo=linkedin)](https://www.linkedin.com/in/ana-furlaneto-a47746368/) | ana.furlaneto19@icloud.com |
+| Giovana Machado D'Angelo | — | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Giovana-0A66C2?logo=linkedin)](https://www.linkedin.com/in/giovanamdangelo/) | giovanamachadodangelo@gmail.com |
 
 ---
 
