@@ -5,300 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FieldNode — Telemetria Agrícola</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    /*
-    =====================================================
-      FIELDNODE — DASHBOARD DE TELEMETRIA AGRICOLA
-      Arquivo: index.html
-      Descricao: Interface principal do sistema FieldNode.
-      Consome a API Django REST em http://127.0.0.1:8000
-      
-      Estrutura do arquivo:
-        1. CSS — estilos visuais (variaveis, layout, componentes)
-        2. HTML — sidebar, topbar e paginas (abas)
-        3. JavaScript — comunicacao com API e logica do frontend
-    =====================================================
-    */
-
-    /* ─────────────────────────────────────────
-       VARIAVEIS GLOBAIS DE COR E FONTE
-       Altere aqui para mudar o tema do sistema inteiro.
-       Use var(--nome) em qualquer elemento CSS abaixo.
-    ───────────────────────────────────────── */
-    :root {
-      --bg:        #0e1210;
-      --bg2:       #151a17;
-      --bg3:       #1c2420;
-      --border:    rgba(255,255,255,0.07);
-      --border2:   rgba(255,255,255,0.13);
-      --green:     #4ade80;
-      --green-dim: #1a3326;
-      --amber:     #fbbf24;
-      --amber-dim: #2d2007;
-      --red:       #f87171;
-      --red-dim:   #2d1010;
-      --blue:      #60a5fa;
-      --blue-dim:  #0f1e33;
-      --text:      #e8f0eb;
-      --text2:     #7a9080;
-      --text3:     #4a6055;
-      --mono:      'DM Mono', monospace;
-      --sans:      'DM Sans', sans-serif;
-      --radius:    10px;
-      --radius-lg: 16px;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-    }
-
-    /* ─────────────────────────────────────────
-       SIDEBAR — Barra lateral fixa
-       Contém: logo, menu de navegacao e status da API
-    ───────────────────────────────────────── */
-    .sidebar {
-      width: 220px;
-      flex-shrink: 0;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      padding: 24px 0;
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-    }
-
-    .logo {
-      display: flex; align-items: center; gap: 10px;
-      padding: 0 20px 24px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
-    }
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: var(--green-dim);
-      border: 1px solid rgba(74,222,128,.3);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .logo-icon svg { width: 16px; height: 16px; fill: var(--green); }
-    .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
-    .logo-sub  { font-size: 10px; color: var(--text3); font-family: var(--mono); letter-spacing: .05em; }
-
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 20px; font-size: 13px; font-weight: 400;
-      color: var(--text2); cursor: pointer;
-      border-left: 2px solid transparent;
-      transition: all .15s;
-    }
-    .nav-item:hover { color: var(--text); background: rgba(255,255,255,.03); }
-    .nav-item.active { color: var(--green); border-left-color: var(--green); background: var(--green-dim); }
-    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
-    .nav-item.active svg { opacity: 1; }
-
-    .sidebar-footer {
-      margin-top: auto;
-      padding: 16px 20px 0;
-      border-top: 1px solid var(--border);
-    }
-    .api-status {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 11px; font-family: var(--mono); color: var(--text3);
-    }
-    .api-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--text3);
-      transition: background .3s;
-    }
-    .api-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
-    .api-dot.offline { background: var(--red); }
-
-    /* ─────────────────────────────────────────
-       AREA PRINCIPAL
-       Fica ao lado direito da sidebar (margin-left: 220px)
-       Contém: topbar fixo + area de conteudo das paginas
-    ───────────────────────────────────────── */
-    .main {
-      margin-left: 220px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .topbar {
-      padding: 18px 28px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--bg2);
-      position: sticky; top: 0; z-index: 10;
-    }
-    .topbar-title { font-size: 16px; font-weight: 600; }
-    .topbar-sub   { font-size: 12px; color: var(--text2); margin-top: 1px; }
-
-    .badge {
-      font-size: 11px; font-family: var(--mono);
-      padding: 4px 10px; border-radius: 20px;
-      display: inline-flex; align-items: center; gap: 5px;
-    }
-    .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,.2); }
-    .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,.2); }
-    .badge-red   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,113,113,.2); }
-    .badge-blue  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(96,165,250,.2); }
-    .badge-gray  { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
-
-    .content { padding: 24px 28px; flex: 1; }
-
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* ─────────────────────────────────────────
-       CARDS E METRICAS
-       .metric-card — card de numero grande (ex: total de maquinas)
-       .card        — card generico para graficos e listas
-    ───────────────────────────────────────── */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0,1fr));
-      gap: 12px; margin-bottom: 20px;
-    }
-    .metric-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px 18px;
-      transition: border-color .2s;
-    }
-    .metric-card:hover { border-color: var(--border2); }
-    .metric-label { font-size: 10px; font-family: var(--mono); color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
-    .metric-value { font-size: 28px; font-weight: 300; color: var(--text); line-height: 1; }
-    .metric-unit  { font-size: 13px; color: var(--text2); margin-left: 3px; }
-    .metric-sub   { font-size: 11px; color: var(--text3); margin-top: 6px; font-family: var(--mono); }
-
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 18px 20px;
-    }
-    .card-title {
-      font-size: 11px; font-family: var(--mono);
-      color: var(--text3); letter-spacing: .08em;
-      text-transform: uppercase; margin-bottom: 14px;
-    }
-
-    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-
-    /* ─────────────────────────────────────────
-       TABELAS
-       Usadas nas paginas de Colheitadeiras e Operarios
-    ───────────────────────────────────────── */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead th {
-      text-align: left; padding: 8px 12px;
-      font-size: 10px; font-family: var(--mono); letter-spacing: .08em;
-      text-transform: uppercase; color: var(--text3);
-      border-bottom: 1px solid var(--border);
-      font-weight: 400;
-    }
-    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover td { background: rgba(255,255,255,.02); }
-    .mono { font-family: var(--mono); font-size: 12px; }
-
-    /* ─────────────────────────────────────────
-       LINHAS DE DADOS (chave: valor)
-       Usadas nos cards de detalhes (ambiente, pressoes, etc.)
-    ───────────────────────────────────────── */
-    .data-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-      font-size: 13px;
-    }
-    .data-row:last-child { border-bottom: none; }
-    .data-key { color: var(--text2); }
-    .data-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
-
-    /* ─────────────────────────────────────────
-       FORMULARIOS DE CADASTRO
-       .form-grid  — grade de 2 colunas para os campos
-       .form-group — grupo de label + input/select
-       .btn        — botao generico
-       .btn-primary — botao verde (salvar)
-       .btn-ghost   — botao transparente (cancelar/voltar)
-    ───────────────────────────────────────── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 11px; color: var(--text2); font-family: var(--mono); letter-spacing: .05em; }
-    .form-group input,
-    .form-group select {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 8px 12px;
-      color: var(--text); font-size: 13px; font-family: var(--sans);
-      outline: none; transition: border-color .15s;
-    }
-    .form-group input:focus,
-    .form-group select:focus { border-color: rgba(74,222,128,.4); }
-    .form-group select option { background: var(--bg3); }
-
-    .btn {
-      padding: 9px 18px; border-radius: var(--radius);
-      font-size: 13px; font-family: var(--sans); font-weight: 500;
-      cursor: pointer; border: none; transition: all .15s;
-    }
-    .btn-primary {
-      background: var(--green-dim); color: var(--green);
-      border: 1px solid rgba(74,222,128,.3);
-    }
-    .btn-primary:hover { background: rgba(74,222,128,.2); }
-    .btn-ghost {
-      background: transparent; color: var(--text2);
-      border: 1px solid var(--border);
-    }
-    .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
-
-    /* ── ALERT ITEMS ── */
-    .alert-item {
-      display: flex; gap: 12px; padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .alert-item:last-child { border-bottom: none; }
-    .alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
-    .alert-msg  { font-size: 13px; color: var(--text); }
-    .alert-meta { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: var(--mono); }
-
-    /* ── LOADING / ERROR ── */
-    .state-msg {
-      padding: 32px; text-align: center;
-      font-size: 13px; color: var(--text3);
-      font-family: var(--mono);
-    }
-
-    /* ── CHART ── */
-    .chart-wrap { position: relative; width: 100%; height: 200px; margin-top: 8px; }
-
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .pulse { animation: pulse 2s ease-in-out infinite; }
-    .cad-tab { font-size:13px; padding:8px 16px; background:transparent; border:none; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color .15s; font-family:var(--sans); }
-    .cad-tab:hover { color:var(--text); }
-    .cad-tab.active { color:var(--green); border-bottom-color:var(--green); font-weight:500; }
-    .fb { font-size:12px; font-family:var(--mono); color:var(--text3); }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 900px) {
-      .metrics-grid { grid-template-columns: 1fr 1fr; }
-      .two-col, .three-col { grid-template-columns: 1fr; }
-    }
-  </style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -346,7 +53,7 @@
       <div class="api-dot pulse" id="api-dot"></div>
       <span id="api-status-text">verificando...</span>
     </div>
-    <div style="font-size:10px; color:var(--text3); margin-top:4px; font-family:var(--mono);">127.0.0.1:8000</div>
+    <div class="api-url">127.0.0.1:8000</div>
   </div>
 </aside>
 
@@ -363,7 +70,7 @@
       <div class="topbar-title" id="page-title">Dashboard</div>
       <div class="topbar-sub" id="page-sub">Visão geral da frota</div>
     </div>
-    <button class="btn btn-ghost" onclick="recarregarPagina()" style="font-size:12px;">↻ Atualizar</button>
+    <button class="btn btn-ghost btn-refresh" onclick="recarregarPagina()">↻ Atualizar</button>
   </div>
 
   <div class="content">
@@ -371,7 +78,7 @@
     <!-- ══ DASHBOARD ══ -->
     <div id="pg-dashboard" class="page active">
       <div class="metrics-grid" id="metrics-container">
-        <div class="state-msg" style="grid-column:1/-1">Carregando métricas...</div>
+        <div class="state-msg metrics-full">Carregando métricas...</div>
       </div>
       <div class="two-col">
         <div class="card">
@@ -390,15 +97,15 @@
         </div>
         <div class="card">
           <div class="card-title">Movimentação da frota</div>
-          <div class="chart-wrap" style="height:160px"><canvas id="moveChart"></canvas></div>
+          <div class="chart-wrap chart-move"><canvas id="moveChart"></canvas></div>
         </div>
       </div>
     </div>
 
     <!-- ══ COLHEITADEIRAS ══ -->
     <div id="pg-colheitadeiras" class="page">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div style="font-size:13px; color:var(--text2);">Frota registrada na API</div>
+      <div class="colh-header">
+        <div class="colh-sub">Frota registrada na API</div>
       </div>
       <div class="card">
         <div class="table-wrap">
@@ -420,7 +127,7 @@
 
     <!-- ══ OPERÁRIOS ══ -->
     <div id="pg-operarios" class="page">
-      <div class="card" style="margin-bottom:14px">
+      <div class="card operarios-card">
         <div class="table-wrap">
           <table>
             <thead>
@@ -437,7 +144,7 @@
     <!-- CADASTROS -->
     <div id="pg-cadastros" class="page">
 
-      <div style="display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:0;">
+      <div class="cad-tabs">
         <button class="cad-tab active" onclick="showCadTab('referencia',this)">Referencia</button>
         <button class="cad-tab" onclick="showCadTab('leituras',this)">Leituras</button>
         <button class="cad-tab" onclick="showCadTab('maquina',this)">Colheitadeira</button>
@@ -449,7 +156,7 @@
           <div class="card">
             <div class="card-title">Nova marca</div>
             <div class="form-group"><label>Nome da marca</label><input type="text" id="marca-nome" placeholder="Ex: Case IH"></div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarMarca()">Salvar</button>
               <span id="marca-feedback" class="fb"></span>
             </div>
@@ -460,7 +167,7 @@
               <div class="form-group"><label>Nome do modelo</label><input type="text" id="mod-nome" placeholder="Ex: TC5000"></div>
               <div class="form-group"><label>Marca</label><select id="mod-marca"><option value="">Carregando...</option></select></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarModelo()">Salvar</button>
               <span id="mod-feedback" class="fb"></span>
             </div>
@@ -471,7 +178,7 @@
               <div class="form-group"><label>Tipo</label><input type="text" id="comb-tipo" placeholder="Ex: Diesel S10"></div>
               <div class="form-group"><label>Porcentagem (%)</label><input type="number" id="comb-pct" placeholder="0-100" min="0" max="100"></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarCombustivel()">Salvar</button>
               <span id="comb-feedback" class="fb"></span>
             </div>
@@ -482,11 +189,11 @@
               <div class="form-group"><label>Nome</label><input type="text" id="op-nome" placeholder="Nome completo"></div>
               <div class="form-group"><label>Tempo de servico (anos)</label><input type="number" id="op-tempo" placeholder="Ex: 5" min="0" max="99"></div>
             </div>
-            <div class="form-group" style="margin-top:10px">
+            <div class="form-group cad-op-banco">
               <label>No banco</label>
               <select id="op-banco"><option value="true">Sim</option><option value="false">Nao</option></select>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarOperario()">Salvar</button>
               <span id="op-feedback" class="fb"></span>
             </div>
@@ -494,7 +201,7 @@
           <div class="card">
             <div class="card-title">Nova unidade de medida</div>
             <div class="form-group"><label>Nome</label><input type="text" id="um-nome" placeholder="Ex: PSI, bar, grau C, cm"></div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarUnidade()">Salvar</button>
               <span id="um-feedback" class="fb"></span>
             </div>
@@ -503,7 +210,7 @@
       </div>
 
       <!-- ABA 2: Leituras -->
-      <div id="cad-leituras" class="cad-pane" style="display:none">
+      <div id="cad-leituras" class="cad-pane cad-leituras-pane">
         <div class="two-col">
           <div class="card">
             <div class="card-title">Nova pressao dos pneus</div>
@@ -511,7 +218,7 @@
               <div class="form-group"><label>Pressao</label><input type="number" id="pneu-pressao" placeholder="Ex: 32"></div>
               <div class="form-group"><label>Unidade</label><select id="pneu-unidade"><option value="">Carregando...</option></select></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarPressaoPneus()">Salvar</button>
               <span id="pneu-feedback" class="fb"></span>
             </div>
@@ -522,7 +229,7 @@
               <div class="form-group"><label>Altura</label><input type="number" id="alt-altura" placeholder="Ex: 45"></div>
               <div class="form-group"><label>Unidade</label><select id="alt-unidade"><option value="">Carregando...</option></select></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarAltura()">Salvar</button>
               <span id="alt-feedback" class="fb"></span>
             </div>
@@ -533,7 +240,7 @@
               <div class="form-group"><label>Pressao</label><input type="number" id="pcorte-pressao" placeholder="Ex: 120"></div>
               <div class="form-group"><label>Unidade</label><select id="pcorte-unidade"><option value="">Carregando...</option></select></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarPressaoCorte()">Salvar</button>
               <span id="pcorte-feedback" class="fb"></span>
             </div>
@@ -544,7 +251,7 @@
               <div class="form-group"><label>Temperatura (grau C)</label><input type="number" id="amb-temp" placeholder="Ex: 31.4"></div>
               <div class="form-group"><label>Umidade (%)</label><input type="number" id="amb-umi" placeholder="Ex: 68"></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarAmbiente()">Salvar</button>
               <span id="amb-feedback" class="fb"></span>
             </div>
@@ -555,7 +262,7 @@
               <div class="form-group"><label>Temperatura (grau C)</label><input type="number" id="tmaq-temp" placeholder="Ex: 82.3"></div>
               <div class="form-group"><label>Modelo da maquina</label><select id="tmaq-modelo"><option value="">Carregando...</option></select></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarTempMaquina()">Salvar</button>
               <span id="tmaq-feedback" class="fb"></span>
             </div>
@@ -566,7 +273,7 @@
               <div class="form-group"><label>Em operacao</label><select id="sop-status"><option value="true">Sim</option><option value="false">Nao</option></select></div>
               <div class="form-group"><label>Tempo de operacao (h)</label><input type="number" id="sop-tempo" placeholder="Ex: 4.5"></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarStatusOp()">Salvar</button>
               <span id="sop-feedback" class="fb"></span>
             </div>
@@ -577,7 +284,7 @@
               <div class="form-group"><label>Em movimento</label><select id="mov-status"><option value="true">Sim</option><option value="false">Nao</option></select></div>
               <div class="form-group"><label>Velocidade (km/h)</label><input type="number" id="mov-vel" placeholder="Ex: 12.3"></div>
             </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <div class="cad-form-actions">
               <button class="btn btn-primary" onclick="cadastrarMovimento()">Salvar</button>
               <span id="mov-feedback" class="fb"></span>
             </div>
@@ -586,10 +293,10 @@
       </div>
 
       <!-- ABA 3: Colheitadeira -->
-      <div id="cad-maquina" class="cad-pane" style="display:none">
-        <div class="card" style="max-width:700px">
+      <div id="cad-maquina" class="cad-pane cad-maquina-pane">
+        <div class="card cad-maquina-card">
           <div class="card-title">Nova colheitadeira</div>
-          <div class="form-grid" style="margin-bottom:10px">
+          <div class="form-grid cad-maquina-grid">
             <div class="form-group"><label>Modelo</label><select id="col-modelo"><option value="">Carregando...</option></select></div>
             <div class="form-group"><label>Combustivel</label><select id="col-comb"><option value="">Carregando...</option></select></div>
             <div class="form-group"><label>Operario</label><select id="col-operario"><option value="">Carregando...</option></select></div>
@@ -601,7 +308,7 @@
             <div class="form-group"><label>Status de operacao</label><select id="col-status"><option value="">Carregando...</option></select></div>
             <div class="form-group"><label>Estado de movimento</label><select id="col-mov"><option value="">Carregando...</option></select></div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <div class="cad-maquina-actions">
             <button class="btn btn-primary" onclick="cadastrarColheitadeira()">Cadastrar colheitadeira</button>
             <span id="col-feedback" class="fb"></span>
           </div>
@@ -619,7 +326,7 @@
         </div>
         <div class="card">
           <div class="card-title">Resumo por tipo</div>
-          <div class="chart-wrap" style="height:180px"><canvas id="alertChart"></canvas></div>
+          <div class="chart-wrap chart-alert"><canvas id="alertChart"></canvas></div>
         </div>
       </div>
     </div>
@@ -807,7 +514,7 @@ async function carregarDashboard() {
 
   } catch (e) {
     document.getElementById('metrics-container').innerHTML =
-      `<div class="state-msg" style="grid-column:1/-1;color:var(--red)">Erro ao conectar na API. Verifique se o Django está rodando.</div>`;
+      `<div class="state-msg err-full">Erro ao conectar na API. Verifique se o Django está rodando.</div>`;
   }
 }
 
@@ -961,25 +668,25 @@ async function carregarColheitadeiras() {
 
       // Monta exibicao de temperatura com cor de alerta
       const tempVal  = temp?.Temperatura ?? null;
-      const tempCor  = tempVal > 85 ? 'var(--red)' : tempVal > 75 ? 'var(--amber)' : 'var(--text)';
-      const tempText = tempVal !== null ? `<span style="color:${tempCor}">${tempVal} C</span>` : '—';
+      const tempClass = tempVal > 85 ? 'temp-red' : tempVal > 75 ? 'temp-amber' : 'temp-ok';
+      const tempText = tempVal !== null ? `<span class="${tempClass}">${tempVal} C</span>` : '—';
 
       // Monta exibicao de velocidade
       const velText = mov ? (mov.Em_Movimento ? mov.Velocidade + ' km/h' : 'Parada') : '—';
 
       return `
-        <tr style="cursor:pointer" onclick="window.location='maquina.html?id=${c.id}'" title="Ver detalhes">
+        <tr class="colh-row" onclick="window.location='maquina.html?id=${c.id}'" title="Ver detalhes">
           <td class="mono">#${String(c.id).padStart(2,'0')}</td>
-          <td style="color:var(--green)">${modelo?.Nome ?? '—'}</td>
+          <td class="colh-modelo">${modelo?.Nome ?? '—'}</td>
           <td>${operario?.Nome ?? '—'}</td>
           <td>${comb ? comb.Tipo + ' (' + comb.Porcentagem + '%)' : '—'}</td>
           <td>${tempText}</td>
           <td>${velText}</td>
-          <td>${badge} <span style="font-size:11px;color:var(--text3);margin-left:4px">→</span></td>
+          <td>${badge} <span class="colh-arrow">→</span></td>
         </tr>`;
     }).join('');
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="7" class="state-msg" style="color:var(--red)">Erro ao carregar. Verifique a API.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="state-msg err-red">Erro ao carregar. Verifique a API.</td></tr>';
   }
 }
 
@@ -1008,7 +715,7 @@ async function carregarOperarios() {
       </tr>`
     ).join('');
   } catch {
-    tbody.innerHTML = '<tr><td colspan="4" class="state-msg" style="color:var(--red)">Erro ao carregar.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="state-msg err-red">Erro ao carregar.</td></tr>';
   }
 }
 
@@ -1050,11 +757,11 @@ async function carregarAlertas() {
     });
 
     if (!alertas.length) {
-      cont.innerHTML = '<div class="state-msg" style="color:var(--green)">✓ Nenhum alerta ativo.</div>';
+      cont.innerHTML = '<div class="state-msg ok-green">✓ Nenhum alerta ativo.</div>';
     } else {
       cont.innerHTML = alertas.map(a => `
         <div class="alert-item">
-          <div class="alert-dot" style="background:var(--${a.nivel})"></div>
+          <div class="alert-dot alert-dot-${a.nivel}"></div>
           <div>
             <div class="alert-msg">${a.msg}</div>
             <div class="alert-meta">${a.meta}</div>
@@ -1081,7 +788,7 @@ async function carregarAlertas() {
     });
 
   } catch {
-    cont.innerHTML = '<div class="state-msg" style="color:var(--red)">Erro ao carregar alertas.</div>';
+    cont.innerHTML = '<div class="state-msg err-red">Erro ao carregar alertas.</div>';
   }
 }
 

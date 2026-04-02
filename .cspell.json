@@ -1,17 +1,34 @@
 {
   "version": "0.2",
-  "language": "pt,pt-BR,en",
-  "ignorePaths": [
-    ".venv/**",
-    "node_modules/**",
-    "*.min.css",
-    "*.min.js"
-  ],
+  "language": "en,pt",
   "words": [
-    "fieldnode", "telemetria", "colheitadeira", "colheitadeiras",
-    "operario", "operarios", "ingestao", "ingestão", "deduplicação",
-    "mysqlclient", "drf", "yasg", "viewsets", "runserver", "venv",
-    "virtualenv", "serialização", "Temperaturamaquina", "maquina",
-    "fieldnode", "mysqlclient", "decouple", "corsheaders"
+    "topbar",
+    "colh",
+    "pcorte",
+    "scikit",
+    "pytest",
+    "Furlaneto",
+    "Combustivel",
+    "Tempumi",
+    "Estadodemovimento",
+    "Statusdeoperacao",
+    "Pressaopneus",
+    "Alturadocorte",
+    "Pressaodocorte",
+    "Operacao",
+    "Pressao",
+    "Unidadede",
+    "Tempode",
+    "Servico",
+    "Nobanco",
+    "Estadode",
+    "Statusde",
+    "Alturado",
+    "Pressaodo"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    ".venv",
+    "*.min.js"
   ]
 }

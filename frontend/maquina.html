@@ -3,34 +3,12 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Detalhes de telemetria em tempo real de colheitadeiras agrícolas — FieldNode."/>
+  <meta name="keywords" content="telemetria, colheitadeira, agricultura, FieldNode, IoT, ESP32"/>
   <title>FieldNode — Detalhes da Máquina</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    :root {
-      --bg:        #0e1210;
-      --bg2:       #151a17;
-      --bg3:       #1c2420;
-      --border:    rgba(255,255,255,0.07);
-      --border2:   rgba(255,255,255,0.13);
-      --green:     #4ade80;
-      --green-dim: #1a3326;
-      --amber:     #fbbf24;
-      --amber-dim: #2d2007;
-      --red:       #f87171;
-      --red-dim:   #2d1010;
-      --blue:      #60a5fa;
-      --blue-dim:  #0f1e33;
-      --text:      #e8f0eb;
-      --text2:     #7a9080;
-      --text3:     #4a6055;
-      --mono:      'DM Mono', monospace;
-      --sans:      'DM Sans', sans-serif;
-      --radius:    10px;
-      --radius-lg: 16px;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
-
     /* SIDEBAR */
     .sidebar {
       width: 220px; flex-shrink: 0;
@@ -138,6 +116,11 @@
       .grid-2 { grid-template-columns: 1fr; }
       .hero { flex-direction: column; align-items: flex-start; gap: 14px; }
     }
+
+    /* Inline styles extraídos */
+    .api-address { font-size:10px; color:var(--text3); margin-top:4px; font-family:var(--mono); }
+    .topbar-divider { width:1px; height:20px; background:var(--border); }
+    .refresh-btn { font-size:12px; padding:7px 14px; background:transparent; border:1px solid var(--border); border-radius:var(--radius); color:var(--text2); cursor:pointer; }
   </style>
 </head>
 <body>
@@ -172,7 +155,7 @@
       <div class="api-dot"></div>
       <span>API online</span>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono);">127.0.0.1:8000</div>
+    <div class="api-address">127.0.0.1:8000</div>
   </div>
 </aside>
 
@@ -184,13 +167,13 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
         Voltar
       </a>
-      <div style="width:1px;height:20px;background:var(--border)"></div>
+      <div class="topbar-divider"></div>
       <div>
         <div class="topbar-title" id="page-title">Carregando...</div>
         <div class="topbar-sub">Detalhes da máquina</div>
       </div>
     </div>
-    <button onclick="location.reload()" style="font-size:12px;padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);cursor:pointer;">↻ Atualizar</button>
+    <button onclick="location.reload()" class="refresh-btn">↻ Atualizar</button>
   </div>
 
   <div class="content" id="content">
@@ -237,7 +220,17 @@ function iniciais(nome) {
 
 async function carregar() {
   try {
-    const [colh, todas_temp, todos_comb, todo_amb, todo_mov, todo_status, todo_pneus, todo_corte, todo_pcorte] = await Promise.all([
+    const [
+      colh,
+      todasTemp,
+      todosComb,
+      todoAmb,
+      todoMov,
+      todoStatus,
+      todoPneus,
+      todoCorte,
+      todoPressaoCorte
+    ] = await Promise.all([
       apiFetch('/Colheitadeira/' + ID + '/'),
       apiFetch('/Temperaturamaquina/'),
       apiFetch('/Combustivel/'),
@@ -250,14 +243,14 @@ async function carregar() {
     ]);
 
     // Dados relacionados
-    const temp   = todas_temp.find(t => t.id === colh.TemperaturaMaquina) || {};
-    const comb   = todos_comb.find(c => c.id === colh.Combustivel)        || {};
-    const amb    = todo_amb.find(a => a.id === colh.TempUmi_Ambiente)      || {};
-    const mov    = todo_mov.find(m => m.id === colh.EstadodeMovimento)     || {};
-    const status = todo_status.find(s => s.id === colh.StatusdeOperacao)   || {};
-    const pneus  = todo_pneus.find(p => p.id === colh.PressaoPneus)        || {};
-    const corte  = todo_corte.find(c => c.id === colh.AlturadoCorte)       || {};
-    const pcorte = todo_pcorte.find(p => p.id === colh.PressaodoCorte)     || {};
+    const temp   = todasTemp.find(t => t.id === colh.TemperaturaMaquina)  || {};
+    const comb   = todosComb.find(c => c.id === colh.Combustivel)         || {};
+    const amb    = todoAmb.find(a => a.id === colh.TempUmi_Ambiente)       || {};
+    const mov    = todoMov.find(m => m.id === colh.EstadodeMovimento)      || {};
+    const status = todoStatus.find(s => s.id === colh.StatusdeOperacao)    || {};
+    const pneus  = todoPneus.find(p => p.id === colh.PressaoPneus)         || {};
+    const corte  = todoCorte.find(c => c.id === colh.AlturadoCorte)        || {};
+    const pressaoCorte = todoPressaoCorte.find(p => p.id === colh.PressaodoCorte) || {};
 
     // Operário — busca por ID
     let operario = {};
@@ -271,10 +264,10 @@ async function carregar() {
     const nomeModelo = modelo.Nome || 'Colheitadeira #' + ID;
     document.getElementById('page-title').textContent = nomeModelo;
 
-    const emOp  = status.Em_Operacao;
-    const emMov = mov.Em_Movimento;
-    const tempVal = temp.Temperatura || 0;
-    const combPct = comb.Porcentagem || 0;
+    const emOp    = status.Em_Operacao;
+    const emMov   = mov.Em_Movimento;
+    const tempVal = temp.Temperatura  || 0;
+    const combPct = comb.Porcentagem  || 0;
 
     // Alertas automáticos
     const alertas = [];
@@ -349,7 +342,7 @@ async function carregar() {
           <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>pressões e corte</div>
           <div class="data-row"><span class="data-key">Pressão dos pneus</span><span class="data-val">${pneus.Pressao ?? '—'} ${pneus.UnidadedeMedida?.Nome || ''}</span></div>
           <div class="data-row"><span class="data-key">Altura de corte</span><span class="data-val">${corte.Altura ?? '—'} ${corte.UnidadedeMedida?.Nome || ''}</span></div>
-          <div class="data-row"><span class="data-key">Pressão de corte</span><span class="data-val">${pcorte.Pressao ?? '—'} ${pcorte.UnidadedeMedida?.Nome || ''}</span></div>
+          <div class="data-row"><span class="data-key">Pressão de corte</span><span class="data-val">${pressaoCorte.Pressao ?? '—'} ${pressaoCorte.UnidadedeMedida?.Nome || ''}</span></div>
         </div>
 
         <div class="card">
@@ -371,7 +364,7 @@ async function carregar() {
             <div class="op-avatar">${operario.Nome ? iniciais(operario.Nome) : '?'}</div>
             <div>
               <div class="op-name">${operario.Nome || '—'}</div>
-              <div class="op-meta">${operario.TempodeServico ?? '—'} anos de serviço</div>
+              <div class="op-meta">${operario.TempoDeServico ?? '—'} anos de serviço</div>
             </div>
           </div>
           <div class="data-row"><span class="data-key">No banco</span>
@@ -398,17 +391,17 @@ async function carregar() {
     new Chart(document.getElementById('allTempChart'), {
       type: 'line',
       data: {
-        labels: todas_temp.map((_, i) => '#' + (i+1)),
+        labels: todasTemp.map((_, i) => '#' + (i+1)),
         datasets: [{
           label: 'Temperatura',
-          data: todas_temp.map(t => t.Temperatura),
+          data: todasTemp.map(t => t.Temperatura),
           borderColor: '#fbbf24',
           backgroundColor: 'rgba(251,191,36,.08)',
           borderWidth: 1.5, pointRadius: 3, tension: 0.4, fill: true,
-          pointBackgroundColor: todas_temp.map(t =>
+          pointBackgroundColor: todasTemp.map(t =>
             t.id === colh.TemperaturaMaquina ? '#4ade80' : '#fbbf24'
           ),
-          pointRadius: todas_temp.map(t =>
+          pointRadius: todasTemp.map(t =>
             t.id === colh.TemperaturaMaquina ? 6 : 3
           ),
         }]
@@ -430,10 +423,10 @@ async function carregar() {
     new Chart(document.getElementById('allFuelChart'), {
       type: 'bar',
       data: {
-        labels: todos_comb.map(c => c.Tipo || '?'),
+        labels: todosComb.map(c => c.Tipo || '?'),
         datasets: [{
-          data: todos_comb.map(c => c.Porcentagem),
-          backgroundColor: todos_comb.map(c =>
+          data: todosComb.map(c => c.Porcentagem),
+          backgroundColor: todosComb.map(c =>
             c.id === colh.Combustivel ? '#4ade80' :
             c.Porcentagem < 30 ? '#f87171' :
             c.Porcentagem < 50 ? '#fbbf24' : '#1a3326'

@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import IntegrityError
 from api_tcc.models import LeituraTelemetria
 from api_tcc.api.serializers import LeituraTelemetriaSerializer
 
@@ -24,7 +25,13 @@ class IngestaoTelemetriaView(APIView):
                     {'status': 'erro', 'detalhes': {'maquina_id': 'Este campo não pode ser vazio.'}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer.save()
+            try:
+                serializer.save()
+            except IntegrityError:
+                return Response(
+                    {'status': 'duplicata ignorada', 'id': str(serializer.validated_data.get('id', ''))},
+                    status=status.HTTP_200_OK
+                )
             return Response(
                 {'status': 'ok', 'id': str(serializer.data['id'])},
                 status=status.HTTP_201_CREATED
