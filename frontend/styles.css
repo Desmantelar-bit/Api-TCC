@@ -345,6 +345,44 @@ tbody tr:hover td { background: rgba(255,255,255,.02); }
 
 .topbar-left > div { width:1px;height:20px;background:var(--border); }
 
+/* TELEMETRIA ESP32 */
+.telemetria-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.telemetria-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  transition: border-color .2s;
+}
+.telemetria-card:hover { border-color: var(--border2); }
+.telemetria-id {
+  font-size: 11px; font-family: var(--mono);
+  color: var(--green); letter-spacing: .06em;
+  margin-bottom: 10px;
+}
+.telemetria-metrics {
+  display: flex; gap: 14px;
+}
+.telemetria-metric {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.telemetria-label {
+  font-size: 9px; font-family: var(--mono);
+  color: var(--text3); letter-spacing: .1em;
+}
+.telemetria-value {
+  font-size: 18px; font-weight: 300; line-height: 1;
+}
+.telemetria-ts {
+  font-size: 10px; font-family: var(--mono);
+  color: var(--text3); margin-top: 10px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .metrics-grid { grid-template-columns: 1fr 1fr; }

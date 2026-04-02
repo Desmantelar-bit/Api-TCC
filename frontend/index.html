@@ -100,6 +100,10 @@
           <div class="chart-wrap chart-move"><canvas id="moveChart"></canvas></div>
         </div>
       </div>
+      <div class="card">
+        <div class="card-title">ESP32 — últimas leituras de telemetria</div>
+        <div id="telemetria-container"><div class="state-msg">Carregando...</div></div>
+      </div>
     </div>
 
     <!-- ══ COLHEITADEIRAS ══ -->
@@ -496,26 +500,108 @@ let chartsInitialized = false;
 
 async function carregarDashboard() {
   try {
-    // Busca em paralelo: colheitadeiras + todas as tabelas necessarias
-    const [colh, temp, comb, amb, movimentos] = await Promise.all([
+    const [colh, temp, comb, amb, movimentos, telemetria] = await Promise.all([
       apiFetch('/Colheitadeira/'),
       apiFetch('/Temperaturamaquina/'),
       apiFetch('/Combustivel/'),
       apiFetch('/Tempumi_ambiente/'),
       apiFetch('/Estadodemovimento/'),
+      apiFetch('/api/telemetria/'),
     ]);
 
     renderMetrics(colh, temp, comb);
     renderAmbiente(amb);
     renderTempChart(temp);
     renderFuelChart(colh, comb);
-    // Passa colh E movimentos para cruzar o FK e verificar Em_Movimento real
     renderMoveChart(colh, movimentos);
+    renderTelemetria(telemetria);
 
   } catch (e) {
     document.getElementById('metrics-container').innerHTML =
       `<div class="state-msg err-full">Erro ao conectar na API. Verifique se o Django está rodando.</div>`;
   }
+}
+
+function renderTelemetria(leituras) {
+  const cont = document.getElementById('telemetria-container');
+  if (!leituras.length) {
+    cont.innerHTML = '<div class="state-msg">Nenhuma leitura recebida do ESP32 ainda.</div>';
+    return;
+  }
+
+  // Agrupa a leitura mais recente por maquina_id para o resumo de cards
+  const porMaquina = {};
+  leituras.forEach(l => {
+    if (!porMaquina[l.maquina_id]) porMaquina[l.maquina_id] = l;
+  });
+
+  const tempColor = t => t > 85 ? C.red : t > 75 ? C.amber : C.green;
+  const rpmColor  = r => r > 3000 ? C.red : r > 2000 ? C.amber : C.green;
+  const vibColor  = v => v > 8 ? C.red : v > 5 ? C.amber : C.green;
+
+  const cards = Object.values(porMaquina).map(l => {
+    const ts = new Date(l.timestamp).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    return `
+      <div class="telemetria-card">
+        <div class="telemetria-id">${l.maquina_id}</div>
+        <div class="telemetria-metrics">
+          <div class="telemetria-metric">
+            <span class="telemetria-label">TEMP</span>
+            <span class="telemetria-value" style="color:${tempColor(l.temperatura)}">
+              ${l.temperatura}<span class="metric-unit">°C</span>
+            </span>
+          </div>
+          <div class="telemetria-metric">
+            <span class="telemetria-label">RPM</span>
+            <span class="telemetria-value" style="color:${rpmColor(l.rpm)}">${l.rpm}</span>
+          </div>
+          <div class="telemetria-metric">
+            <span class="telemetria-label">VIB</span>
+            <span class="telemetria-value" style="color:${vibColor(l.vibracao)}">
+              ${l.vibracao}<span class="metric-unit">g</span>
+            </span>
+          </div>
+        </div>
+        <div class="telemetria-ts">${ts}</div>
+      </div>`;
+  }).join('');
+
+  // Tabela com as últimas 10 leituras brutas
+  const linhas = leituras.slice(0, 10).map(l => {
+    const ts = new Date(l.timestamp).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    return `
+      <tr>
+        <td class="mono">${l.maquina_id}</td>
+        <td style="color:${tempColor(l.temperatura)}">${l.temperatura} °C</td>
+        <td style="color:${vibColor(l.vibracao)}">${l.vibracao} g</td>
+        <td style="color:${rpmColor(l.rpm)}">${l.rpm}</td>
+        <td class="mono" style="color:var(--text3);font-size:11px">${ts}</td>
+      </tr>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="telemetria-cards">${cards}</div>
+    <div class="table-wrap" style="margin-top:16px">
+      <table>
+        <thead>
+          <tr>
+            <th>Máquina</th><th>Temperatura</th>
+            <th>Vibração</th><th>RPM</th><th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text3);font-family:var(--mono)">
+      ${leituras.length} leitura${leituras.length !== 1 ? 's' : ''} recebida${leituras.length !== 1 ? 's' : ''}
+      &nbsp;·&nbsp; ${Object.keys(porMaquina).length} máquina${Object.keys(porMaquina).length !== 1 ? 's' : ''} ativa${Object.keys(porMaquina).length !== 1 ? 's' : ''}
+    </div>`;
 }
 
 function renderMetrics(colh, temp, comb) {
