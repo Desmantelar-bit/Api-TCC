@@ -174,17 +174,83 @@ Documentação completa: `http://localhost:8000/swagger/`
 
 ## Créditos
 
-Desenvolvido com carinho por estudantes do curso técnico de Informática do **SENAI** como Trabalho de Conclusão de Curso.
+Desenvolvido por estudantes do curso técnico de Informática do **SENAI**
+como Trabalho de Conclusão de Curso.
 
-| Nome | GitHub | LinkedIn | E-mail |
-|------|--------|----------|--------|
-| Vinícius Morales | [![GitHub](https://img.shields.io/badge/GitHub-ViniciusMorales-181717?logo=github)](https://github.com/ViniciusMorales) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Vin%C3%ADcius-0A66C2?logo=linkedin)](https://www.linkedin.com/in/vin%C3%ADcius-morales-609744368/) | viniciusmorales09@gmail.com |
-| Paola Machado | [![GitHub](https://img.shields.io/badge/GitHub-Paola5858-181717?logo=github)](https://github.com/Paola5858) | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Paola-0A66C2?logo=linkedin)](https://www.linkedin.com/in/paolasoaresmachado/) | paolasesi351@gmail.com |
-| Ana Caroline Furlaneto
-  | [![GitHub](https://img.shields.io/badge/GitHub-acfurlaneto-181717?logo=github)](https://github.com/acfurlaneto)
-  | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Ana%20Caroline-0A66C2?logo=linkedin)](https://www.linkedin.com/in/ana-furlaneto-a47746368/)
-  | ana.furlaneto19@icloud.com |
-| Giovana Machado D'Angelo | — | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Giovana-0A66C2?logo=linkedin)](https://www.linkedin.com/in/giovanamdangelo/) | giovanamachadodangelo@gmail.com |
+<table>
+  <tr>
+    <td align="center" width="200">
+      <a href="https://github.com/ViniciusMorales">
+        <img src="https://github.com/ViniciusMorales.png" width="72"
+             style="border-radius:50%" alt="Vinícius Morales"/>
+      </a>
+      <br/>
+      <strong>Vinícius Morales</strong>
+      <br/>
+      <a href="https://github.com/ViniciusMorales">
+        <img src="https://img.shields.io/badge/GitHub-181717?logo=github"
+             alt="GitHub"/>
+      </a>
+      <a href="https://www.linkedin.com/in/vin%C3%ADcius-morales-609744368/">
+        <img src="https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin"
+             alt="LinkedIn"/>
+      </a>
+      <br/>
+      <sub>viniciusmorales09@gmail.com</sub>
+    </td>
+    <td align="center" width="200">
+      <a href="https://github.com/Paola5858">
+        <img src="https://github.com/Paola5858.png" width="72"
+             style="border-radius:50%" alt="Paola Machado"/>
+      </a>
+      <br/>
+      <strong>Paola Machado</strong>
+      <br/>
+      <a href="https://github.com/Paola5858">
+        <img src="https://img.shields.io/badge/GitHub-181717?logo=github"
+             alt="GitHub"/>
+      </a>
+      <a href="https://www.linkedin.com/in/paolasoaresmachado/">
+        <img src="https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin"
+             alt="LinkedIn"/>
+      </a>
+      <br/>
+      <sub>paolasesi351@gmail.com</sub>
+    </td>
+    <td align="center" width="200">
+      <a href="https://github.com/acfurlaneto">
+        <img src="https://github.com/acfurlaneto.png" width="72"
+             style="border-radius:50%" alt="Ana Caroline Furlaneto"/>
+      </a>
+      <br/>
+      <strong>Ana Caroline Furlaneto</strong>
+      <br/>
+      <a href="https://github.com/acfurlaneto">
+        <img src="https://img.shields.io/badge/GitHub-181717?logo=github"
+             alt="GitHub"/>
+      </a>
+      <a href="https://www.linkedin.com/in/ana-furlaneto-a47746368/">
+        <img src="https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin"
+             alt="LinkedIn"/>
+      </a>
+      <br/>
+      <sub>ana.furlaneto19@icloud.com</sub>
+    </td>
+    <td align="center" width="200">
+      <img src="https://ui-avatars.com/api/?name=Giovana+Machado&size=72&background=0D1117&color=fff&rounded=true"
+           width="72" alt="Giovana Machado D'Angelo"/>
+      <br/>
+      <strong>Giovana Machado D'Angelo</strong>
+      <br/>
+      <a href="https://www.linkedin.com/in/giovanamdangelo/">
+        <img src="https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin"
+             alt="LinkedIn"/>
+      </a>
+      <br/>
+      <sub>giovanamachadodangelo@gmail.com</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
