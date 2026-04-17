@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from api_tcc.api import viewsets
-from api_tcc.api.views_ingestao import IngestaoTelemetriaView
+from api_tcc.api.views_ingestao import AnomaliaView, IngestaoTelemetriaView, UltimaLeituraView, ManutencaoView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
@@ -51,14 +51,20 @@ router.register(r'Estadodemovimento', viewsets.EstadodeMovimentoViewSet, basenam
 router.register(r'Transbordo', viewsets.TransbordoViewSet, basename='transbordo')
 router.register(r'Colheitadeira', viewsets.ColheitadeiraViewSet, basename='colheitadeira')
 
-urlpatterns = [
+urlpatterns = [ # Rota para o admin e para as APIs geradas pelos viewsets
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
     path('api/telemetria/', IngestaoTelemetriaView.as_view(), name='ingestao-telemetria'),
 ]
 
-urlpatterns += [
+urlpatterns += [ # Rotas para a documentação Swagger e Redoc
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('swagger.json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+]
+
+urlpatterns += [ # Rota para detecção de anomalias
+    path('api/anomalias/', AnomaliaView.as_view(), name='anomalias'),
+    path('api/leituras/ultimas/', UltimaLeituraView.as_view(), name='ultimas-leituras'),
+    path('api/manutencao/', ManutencaoView.as_view(), name='manutencao'),
 ]

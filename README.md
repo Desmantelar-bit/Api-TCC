@@ -157,6 +157,13 @@ Documentação completa: `http://localhost:8000/swagger/`
 
 ---
 
+## Limitações conhecidas do protótipo
+
+- **Validação de `maquina_id`**: O endpoint `/api/telemetria/` aceita qualquer string como `maquina_id` sem validar se a máquina está cadastrada na tabela `Colheitadeira`. Isso significa que um ESP32 pode enviar `maquina_id: "qualquer_coisa"` e a leitura será salva normalmente. Em produção, adicione uma foreign key ou validação no serializer para garantir que apenas máquinas cadastradas podem enviar dados.
+- **Pipeline MQTT**: O `mqtt_listen.py` também aceita qualquer `maquina_id` via MQTT sem validação, mantendo a mesma limitação do endpoint REST.
+
+---
+
 ## Roadmap
 
 - [x] API REST com Django + DRF
