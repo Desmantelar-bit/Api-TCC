@@ -94,26 +94,35 @@ class UltimaLeituraView(APIView):
         with connection.cursor() as cursor:
             if maquina:
                 cursor.execute("""
-                    SELECT maquina_id, temperatura, vibracao, rpm, timestamp,
-                           COUNT(*) as total_leituras
-                    FROM api_tcc_leituratelemetria 
-                    WHERE maquina_id = %s
-                    GROUP BY maquina_id
-                    ORDER BY MAX(timestamp) DESC
-                    LIMIT 1
-                """, [maquina])
+                    SELECT t1.maquina_id, t1.temperatura, t1.vibracao, t1.rpm, t1.timestamp, t2.total_leituras
+                    FROM api_tcc_leituratelemetria t1
+                    INNER JOIN (
+                        SELECT maquina_id, MAX(timestamp) as max_ts
+                        FROM api_tcc_leituratelemetria
+                        WHERE maquina_id = %s
+                    ) t_max ON t1.maquina_id = t_max.maquina_id AND t1.timestamp = t_max.max_ts
+                    INNER JOIN (
+                        SELECT maquina_id, COUNT(*) as total_leituras
+                        FROM api_tcc_leituratelemetria
+                        WHERE maquina_id = %s
+                    ) t_count ON t1.maquina_id = t_count.maquina_id
+                    WHERE t1.maquina_id = %s
+                """, [maquina, maquina, maquina])
             else:
                 cursor.execute("""
-                    SELECT maquina_id, temperatura, vibracao, rpm, timestamp,
-                           COUNT(*) as total_leituras
+                    SELECT t1.maquina_id, t1.temperatura, t1.vibracao, t1.rpm, t1.timestamp, t3.total_leituras
                     FROM api_tcc_leituratelemetria t1
-                    WHERE timestamp = (
-                        SELECT MAX(timestamp) 
-                        FROM api_tcc_leituratelemetria t2 
-                        WHERE t2.maquina_id = t1.maquina_id
-                    )
-                    GROUP BY maquina_id
-                    ORDER BY maquina_id
+                    INNER JOIN (
+                        SELECT maquina_id, MAX(timestamp) as max_ts
+                        FROM api_tcc_leituratelemetria
+                        GROUP BY maquina_id
+                    ) t2 ON t1.maquina_id = t2.maquina_id AND t1.timestamp = t2.max_ts
+                    INNER JOIN (
+                        SELECT maquina_id, COUNT(*) as total_leituras
+                        FROM api_tcc_leituratelemetria
+                        GROUP BY maquina_id
+                    ) t3 ON t1.maquina_id = t3.maquina_id
+                    ORDER BY t1.maquina_id
                     LIMIT 10
                 """)
             
